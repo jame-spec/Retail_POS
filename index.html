@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>RetailScan Pro — POS</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -507,7 +510,34 @@ let scriptUrl = localStorage.getItem('retailScriptUrl') || '';
 let isConnected = false;
 let reportData = null;
 
-// (ไม่มี demo data)
+// Demo data
+(function(){
+  const now = new Date();
+  const demos = [
+    {h:9,items:[{barcode:'8850123001234',name:'น้ำดื่มสิงห์ 600ml',qty:3,price:10,cost:5},{barcode:'8855678007890',name:'โค้ก 325ml',qty:2,price:20,cost:13}]},
+    {h:11,items:[{barcode:'8850456002345',name:'มาม่าต้มยำกุ้ง',qty:5,price:8,cost:5.5},{barcode:'8853456005678',name:'ปากกาลูกลื่นน้ำเงิน',qty:1,price:15,cost:6}]},
+    {h:14,items:[{barcode:'8856789008901',name:'เลย์รสออริจินัล',qty:2,price:35,cost:20},{barcode:'8850123001234',name:'น้ำดื่มสิงห์ 600ml',qty:4,price:10,cost:5}]},
+  ];
+  demos.forEach(d=>{
+    const t=new Date(now); t.setHours(d.h,30,0);
+    const total=d.items.reduce((s,x)=>s+x.price*x.qty,0);
+    const cost=d.items.reduce((s,x)=>s+x.cost*x.qty,0);
+    const now2=new Date(t); const yyyy=now2.getFullYear(); const mm=String(now2.getMonth()+1).padStart(2,'0');
+    const bn=`RE${yyyy}-${mm}-`+String(billCounter++).padStart(4,'0');
+    bills.push({billNum:bn,time:t,items:d.items,total,cash:total+20,change:20,costTotal:cost});
+    d.items.forEach(it=>{
+      logs.unshift({time:t.toLocaleString('th-TH'),barcode:it.barcode,name:it.name,type:'sale',qty:it.qty,price:it.price,total:it.price*it.qty,note:bn});
+      const p=products.find(x=>x.barcode===it.barcode);
+      if(p)p.qty-=it.qty;
+    });
+  });
+  // demo loss
+  const tLoss=new Date(now); tLoss.setHours(10,15,0);
+  lossLog.push({datetime:tLoss.toLocaleString('th-TH'),dateObj:tLoss,barcode:'8851234003456',name:'สบู่ลักส์',qty:2,cost:28,totalCost:56,reason:'สินค้าแตกเสียหาย'});
+  logs.unshift({time:tLoss.toLocaleString('th-TH'),barcode:'8851234003456',name:'สบู่ลักส์',type:'loss',qty:2,price:28,total:56,note:'สินค้าแตกเสียหาย'});
+  const p=products.find(x=>x.barcode==='8851234003456');
+  if(p)p.qty-=2;
+})();
 
 // ===== CLOCK =====
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('th-TH');},1000);
